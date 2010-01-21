@@ -2,12 +2,11 @@
 # Copyright Matthew Bruenig <matthewbruenig@gmail.com>
 # Licensed under GPL version 3
 
-# TODO: mktemp
-tmpfile=/tmp/packeroutput-$UID
-makepkgconf=/etc/makepkg.conf
-pacmanconf=/etc/pacman.conf
-pacman=$(type -p pacman)
-outputpacman=$(type -p pacman-color)
+tmpfile="/tmp/packeroutput-$UID"
+makepkgconf="/etc/makepkg.conf"
+pacmanconf="/etc/pacman.conf"
+pacman="$(type -p pacman)"
+outputpacman="$(type -p pacman-color)"
 if [[ $outputpacman ]]; then
   COLOR1='\e[1;39m'
   COLOR2='\e[1;32m'
@@ -17,7 +16,7 @@ if [[ $outputpacman ]]; then
   COLOR6='\e[1;33m'
   ENDCOLOR='\e[0m'
 else
-  outputpacman=$pacman
+  outputpacman="$pacman"
 fi
 
 err() {
@@ -26,18 +25,18 @@ err() {
 }
 
 usage() {
-  echo 'usage: packer [option] [package] [package] [...]'
+  echo "usage: packer [option] [package] [package] [...]"
   echo
-  echo '    -S          - installs package'
-  echo '    -Syu|-Su    - updates all packages'
-  echo '    -Ss         - searches for package'
-  echo '    -Si         - outputs info for package'
+  echo "    -S          - installs package"
+  echo "    -Syu|-Su    - updates all packages"
+  echo "    -Ss         - searches for package"
+  echo "    -Si         - outputs info for package"
   echo
-  echo '    --noconfirm - do not prompt for confirmation'
-  echo '    --auronly   - only do actions for aur'
-  echo '    --devel     - update devel packages during -Su'
-  echo '    --skipinteg - when using makepkg, do not check md5s'
-  echo '    -h          - outputs this message'
+  echo "    --noconfirm - do not prompt for confirmation"
+  echo "    --auronly   - only do actions for aur"
+  echo "    --devel     - update devel packages during -Su"
+  echo "    --skipinteg - when using makepkg, do not check md5s"
+  echo "    -h          - outputs this message"
   exit
 }
 
@@ -114,8 +113,8 @@ finddeps() {
     elif existsinaur "$dep"; then
       aurdeps+=("$dep")
     else
-      [[ $option == "install" ]] &&  err "Dependency \`$dep' of \`$1' does not exist."
-      echo "Dependency \`$dep of \`$1' does not exist."
+      [[ $option = "install" ]] &&  err "Dependency \`$dep' of \`$1' does not exist."
+      echo "Dependency \`$dep' of \`$1' does not exist."
       return 1
     fi
   done
@@ -137,14 +136,14 @@ finddeps() {
               aurdeps=("$dep" "${aurdeps[@]}")
               checkdeps+=("$dep")
             else
-              err "Dependency \`$dep' does not exist."
+              echo "Dependency \`$dep' does not exist."
+              return 1
             fi
           fi
         done
       done
     done
   fi
-  # Jesus christ
 }
 
 # Displays a progress bar ($1 is numerator, $2 is denominator)
@@ -274,10 +273,11 @@ installhandling() {
       pacmanpackages+=("$package")
     else
       # find dependencies
-      finddeps "$package"
-      aurpackages+=("$package")
-      aurdepends+=("${aurdeps[@]}")
-      pacmandepends+=("${pacmandeps[@]}")
+      if finddeps "$package"; then
+        aurpackages+=("$package")
+        aurdepends+=("${aurdeps[@]}")
+        pacmandepends+=("${pacmandeps[@]}")
+      fi
     fi
   done
 
@@ -492,6 +492,7 @@ if [[ $option == update ]]; then
         echo "Not updating \`$package'."
       fi 
     done
+    [[ $localpackages ]] || exit
 
     echo
     if [[ $localaurdeps ]]; then
